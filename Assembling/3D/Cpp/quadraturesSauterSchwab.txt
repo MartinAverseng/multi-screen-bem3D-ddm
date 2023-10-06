@@ -1,0 +1,17 @@
+-Changement de coordonnée polaire -> régularise en 0.
+
+-Fonction qui a une singularité sur un sommet d'un triangle -> Duffy (idem)
+-Singularité sur une arête ->  Duffy sommet opposé + quadrature qui raffine h-p au voisinnage de la Singularité
+
+Ex: 2D, arête sur elle-meme, on a un carré qui est IxI, et la singularité est sur la diagonale.
+On coupe le carré en deux, i.e. on triangule pour que la singularité soit dans le squelette.
+
+Ex: 3D, T sur lui-même. Int sur TxT. Polyèdre en dim 4, singularité sur la diagonale.
+Diagonale: triangle plongé en dim 4. Il faut trouver une triangulation en 4-simplexes
+pour que la quadrature soit dans le squelette. Après c'est plié, Duffy.
+
+- Duffy s'applique à un n-simplexe en dimension n.
+
+On se ramène toujours à un singularité localisée sur le bord du triangle.
+
+_______________________________________________________
