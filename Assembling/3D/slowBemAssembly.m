@@ -1,12 +1,14 @@
-function [A] = assemble3Dh(M,waveNum)
-
+function [A] = slowBemAssembly(M,waveNum)
+% Handles k > 0 for Hemholtz operator.
+if ~exist('k','var')||isempty(waveNum)
+    waveNum=0;
+end
 
 [J,Nf] = localToGlobal(M,0);
 
 Nelt = M.nelt;
 n = M.n;
 Kd = n+1;
-V = M.vtx;
 A = zeros(Nf,Nf);
 for el1 = 1:Nelt
         T1 = M.vtx(M.elt(el1,:),:);

@@ -1,11 +1,11 @@
-%% Condition numbers for the 2D algorithm (Fig. 2.6, left)
-% Getting all results with NrefineMax = 9 takes about 8 hours. 
-% The assembing routine for the hypersingular is embarassingly non-optimized. 
+%% Condition numbers for the 2D algorithm (Fig. 2.6, top)
+% Getting all results with NrefineMax = 9 takes about 8 hours.
+% The assembing routine for the hypersingular is embarassingly non-optimized.
 
 
 % run from the folder where the script is located
-% clear all; %#ok
-% close all;
+clear all; %#ok
+close all;
 
 % checking I'm in the right place
 cd ..
@@ -31,10 +31,10 @@ axis equal;
 
 
 NrefineMin = 0;
-NrefineMax = 9;
+NrefineMax = 4;
 
-% condNoPrec = NaN + zeros(NrefineMax,1);
-% condPrec = NaN + zeros(NrefineMax);
+condNoPrec = NaN + zeros(NrefineMax,1);
+condPrec = NaN + zeros(NrefineMax);
 
 for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
     disp(Nrefine)
@@ -55,14 +55,20 @@ for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
     
     condNoPrec(Nrefine+1) = cond(Whtilde);
     
-    for Nprec = 0:Nrefine-1 % Assembling Preconditioner
+    for Nprec = 0:Nrefine % Assembling Preconditioner
         
         disp(Nprec)
         % Splitting
         
         if Nprec == 0
-            Mcoarse = M0;
-            [~,parentElt] = Mcoarse.refine(Nrefine);
+            if Nrefine == 0
+                Mcoarse = M;
+                parentElt = 1:M.nelt;
+            else
+                
+                Mcoarse = M0;
+                [~,parentElt] = Mcoarse.refine(Nrefine);
+            end
         elseif Nprec < Nrefine
             Mcoarse = M0.refine(Nprec);
             [~,parentElt] = Mcoarse.refine(Nrefine-Nprec);
@@ -108,18 +114,15 @@ end
 
 %%
 close all;
-% 
-% load('condPrec','condPrec')
-% load('NoPrec','NoPrec');
+%
 
-h = 1./2.^(0:8);
+h = 1./2.^(0:NrefineMax-1);
 level = 1+log(1./h)/log(2);
-
 
 figure;
 loglog(level,condNoPrec,'-o','LineWidth',2);
 hold on
-for j = 1:5
+for j = 1:min(5,NrefineMax-1)
     loglog(level,condPrec(:,j),'-o','LineWidth',2);
 end
 loglog(level,0.7 + 0.2*log(1./h),'k--','LineWidth',2);
@@ -145,4 +148,4 @@ xaxisproperties= get(gca, 'XAxis');
 xaxisproperties.TickLabelInterpreter = 'latex'; % latex for x-axis
 yaxisproperties= get(gca, 'YAXIS');
 yaxisproperties.TickLabelInterpreter = 'latex'; % latex for y-axis
-set(gca,'XTick',[1 2 3 4 5 6 7 8 9]);
+set(gca,'XTick',1:NrefineMax+1);

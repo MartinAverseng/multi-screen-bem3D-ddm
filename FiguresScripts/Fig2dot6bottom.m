@@ -1,4 +1,4 @@
-%% Condition numbers for the 2D algorithm (Fig. 2.6, left)
+%% Condition numbers for the 2D algorithm (Fig. 2.6, bottom)
 % Getting all results with NrefineMax = 9 takes about 8 hours.
 % The assembing routine for the hypersingular is embarassingly non-optimized.
 
@@ -18,6 +18,7 @@ addpath(genpath(pwd));
 % Coming back to the start
 cd FiguresScripts
 
+mexExec = true; % switch to true for mex execution
 
 %% Geometry
 
@@ -30,12 +31,12 @@ axis equal;
 
 
 NrefineMin = 0;
-NrefineMax = 6;
+NrefineMax = 2;
 
 condNoPrec = NaN + zeros(NrefineMax,1);
 condPrec = NaN + zeros(NrefineMax);
 
-for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
+for Nrefine = NrefineMin:NrefineMax % Assembling operator
     disp(Nrefine)
     M0 = intrinsicInflation(m);
     if Nrefine> 0
@@ -47,7 +48,11 @@ for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
     
     
     [Ph,Jh,Av,F,gamma,I] = jumpSpaceP1(M);
-    Wh = bemAssembly(M);
+    if mexExec
+        Wh = bemAssembly(M); 
+    else
+        Wh = slowBemAssembly(M);
+    end
     
     
     Whtilde = Ph'*Wh*Ph;
@@ -55,7 +60,7 @@ for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
     
     condNoPrec(Nrefine+1) = cond(Whtilde);
     
-    for Nprec = 0:Nrefine-1 % Assembling Preconditioner
+    for Nprec = 0:Nrefine % Assembling Preconditioner
         
         disp(Nprec)
         % Splitting
@@ -74,8 +79,11 @@ for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
             parentElt = 1:M.nelt;
         end
         [PH,JH] = jumpSpaceP1(Mcoarse);
-        WH = bemAssembly(Mcoarse);
-        % WH = (WH+WH)'/2;
+        if mexExec
+            WH = bemAssembly(Mcoarse); 
+        else
+            WH = slowBemAssembly(Mcoarse);
+        end
         
         
         S = coarseSpaceP1(Mcoarse,M,parentElt); % S : {phi_{i,j}^H} -> {phi_{i,j}^h}
@@ -88,51 +96,52 @@ for Nrefine = NrefineMin:NrefineMax-1 % Assembling operator
         
         
         WS = PH'*WH*PH;
-        Prec = @(x)(RS*(WS\(RS'*x)));
-        PrecFull = RS*(WS\(RS'));
+        Prec = RS*(WS\(RS'));
         for i = 1:length(F)
             RFi = Jh*F{i};
             R = Ph*RFi;
-            WFi = bemSubAssembly(M,R,gamma);
-            % WFi = (WFi + WFi')/2;
-            %             WFi = R'*Wh*R;
-            %             Prec = @(x)(Prec(x) + RFi*(WFi\(RFi'*x)));
-            PrecFull = PrecFull + RFi*(WFi\(RFi'));
+            if mexExec
+                WFi = bemSubAssembly(M,R,gamma); 
+            else
+                WFi = R'*Wh*R;
+            end
+            Prec = Prec + RFi*(WFi\(RFi'));
         end
         
-        % MhtildeW = RW'*Mhtilde*RW;
-        Id = speye(size(Av,1));
-        % locSolverW = h*RW'*Ph'*(Id-Av)'*(Id-Av)*Ph*RW;
-        %         WW = RW'*Whtilde*RW;
-        WW = bemSubAssembly(M,Ph*RW,gamma);
-        % WW = (WW+WW)'/2;
-        %         Prec = @(x)(Prec(x) + RW*(WW\(RW'*x)));
-        PrecFull = PrecFull + RW*(WW\(RW'));
+        %         WW = bemSubAssembly(M,Ph*RW,gamma);
+        if mexExec
+            WW = bemSubAssembly(M,Ph*RW,gamma); 
+        else
+            WW = RW'*Whtilde*RW;    
+        end
         
-        [~,D] = eig(PrecFull*Whtilde);
+        Prec = Prec + RW*(WW\(RW'));
+        
+        [~,D] = eig(Prec*Whtilde);
         d = sort(real((diag(D))));
         kappa = max(d)/min(d);
         condPrec(Nrefine+1,Nprec+1) = kappa;
     end
     
 end
-
-save('condPrec','condPrec')
-save('NoPrec','NoPrec');
+% 
+% save('condNoPrec','condNoPrec')
+% save('condPrec','condPrec');
 
 %%
 close all;
+% 
+% load('condNoPrec','condNoPrec');
+% load('condPrec','condPrec');
 
-load('condPrec','condPrec')
-load('NoPrec','NoPrec');
-
+h = 1./2.^(0:NrefineMax);
 level = 1+log(1./h)/log(2);
 
 
 figure;
-loglog(level,NoPrec,'-o','LineWidth',2);
+loglog(level,condNoPrec,'-o','LineWidth',2);
 hold on
-for j = 1:5
+for j = 1:min(5,NrefineMax)
     loglog(level,condPrec(:,j),'-o','LineWidth',2);
 end
 loglog(level,0.7 + 0.7*log(1./h),'k--','LineWidth',2);
