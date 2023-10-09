@@ -4,7 +4,7 @@ It has been used to obtain the numerical results from <link here>.
 To reproduce the figures of this paper, open Matlab in the folder FiguresScripts and run with appropriate parameters.
 Note that the 3D BEM assembling routine requires the use of a mex file which calls a parallel C++ code.
 The compilation of the mex file may depend on your specific configuration. If necessary, the call to bemAssembly 
-can be replaced by slowBemAssembly, which uses a non-optimized Matlab code. 
+can be replaced by slowBemAssembly, which bypasses the mex file and only executes pure Matlab code. 
 
 The library uses:
 - The Matlab toolboxes openMsh, openDom and openFem from https://github.com/matthieuaussal/gypsilab
