@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include "quadrule.hpp"
-#include "hypersingular.hpp"
+#include "hypersingular_helmholtz.hpp"
 #include "mex.hpp"
 #include "mexAdapter.hpp"
 #include <omp.h>
@@ -42,6 +42,7 @@ public:
         const Array Melt = inputs[7];
         const Array KKlist = inputs[8];
         const Array CCppDic = inputs[9];
+        double wavenum = inputs[10][0];
         
         std::vector<double> Mvtx(3*Nvtx);
         std::vector<int> Jint(3*Ne);
@@ -67,9 +68,11 @@ public:
         for (int i=0;i<Nf;++i){
             CppDic[i] = CCppDic[i];
         }
-        std::vector<double>Aloc(Nsub*Nsub);
+        std::vector<double>Aloc_real(Nsub*Nsub);
+        std::vector<double>Aloc_imag(Nsub*Nsub);
         for (int i = 0; i < Nsub*Nsub; ++i){
-            Aloc[i] = 0;
+            Aloc_real[i] = 0;
+            Aloc_imag[i] = 0;
         }
         omp_set_num_threads(8);
         
@@ -78,7 +81,8 @@ public:
             
             std::vector<int> num(6);
             std::vector<double> vtx(18);
-            std::vector<double> res(9);
+            std::vector<double> res_real(9);
+            std::vector<double> res_imag(9);
             std::vector<int> T1(3),T2(3),I(3);
             std::vector<bool> b(3);
             int genFl,genFk,el1,el2,genFkSub,genFlSub;
@@ -88,6 +92,7 @@ public:
 #pragma omp for
             for(int el1sub=0; el1sub<NsubElt; ++el1sub){
                 el1=Klist[el1sub];
+                //std::cout << el1 << std::endl;
                 index1 = 3*el1; // Will be reused below
                 for(int p=0; p<3; ++p){
                     T1[p] = MeltInt[index1+p]; // Don't change index1 here
@@ -120,12 +125,13 @@ public:
                         }
                         index4++;
                     }
-                    HsOp(vtx.data(),num.data(),res.data());
+                    HelmholtzHsOp(vtx.data(),num.data(),res_real.data(),res_imag.data(),wavenum);
                     index5=3*el2;
                     index6 = index1;
                     for (int k = 0; k < 3; ++k){
                         genFk = Jint[index6];
                         genFkSub = CppDic[genFk];
+//
                         index6++;
                         for(int l= 0; l < 3; ++l){
                             genFl = Jint[index5];
@@ -134,7 +140,8 @@ public:
                             if (genFkSub>=0 && genFlSub >=0){
                                 index7=genFkSub+Nsub*genFlSub;
 # pragma omp atomic
-                                Aloc[index7] += res[3*l + k];
+                                Aloc_real[index7] += res_real[3*l + k];
+                                Aloc_imag[index7] += res_imag[3*l + k];
                             }
                         }
                         index5-=3;//index5 = 3*el2+l
@@ -143,7 +150,84 @@ public:
             }
             
         }
-        outputs[0] = factory.createArray({Nsub,Nsub},Aloc.begin(),Aloc.end());
+        outputs[0] = factory.createArray({Nsub,Nsub},Aloc_real.begin(),Aloc_real.end());
+        outputs[1] = factory.createArray({Nsub,Nsub},Aloc_imag.begin(),Aloc_imag.end());
     }
 };
 
+
+// #pragma omp parallel
+//         {
+//             std::vector<int> num(6);
+//             std::vector<double> vtx(18);
+//             std::vector<double> res(9);
+//             std::vector<int> T1(3),T2(3),I(3);
+//             std::vector<bool> b(3);
+//             std::vector<double> Asubloc(Nsub*Nsub);
+//             for (int i = 0; i< Nsub*Nsub; ++i){
+//                 Asubloc[i] = 0;
+//             }
+//             int place;
+//             double Rik, Rjl;
+//             int genFl,genFk,genFlSub,genFkSub;
+//             int el1, el2;
+//
+//             num[0] = 0; num[1] = 1; num[2] = 2;
+// #pragma omp for
+//             for(int el1ind=0; el1ind<Ne; ++el1ind){
+//                 el1 = Klist[el1ind];
+//                 std::cout << el1 << std::endl;
+//                 for(int p=0; p<3; ++p){
+//                     T1[p] = (int)Melt[el1][p];
+//                     for(int q=0; q<3; ++q){
+//                         vtx[3*p+q] = Mvtx[T1[p]][q];
+//                     }
+//                 }
+//
+//                 for(int el2ind=0; el2ind<Ne; ++el2ind){
+//                     el2 = Klist[el2ind];
+//                     for(int p=0; p<3; ++p){
+//                         T2[p] = (int)Melt[el2][p];
+//                         for(int q=0; q<3; ++q){
+//                             vtx[3*(3+p)+q] = Mvtx[T2[p]][q];
+//                         }
+//                     }
+//                     ismember(T2,T1,b,I);
+//                     num[3]=3;num[4]=4;num[5]=5;
+//                     for(int p=0; p<3; ++p){
+//                         if(b[p]){num[3+p]=I[p];}
+//                     }
+//                     HsOp(vtx.data(),num.data(),res.data());
+//
+//
+//                     for (int k = 0; k < 3; ++k){
+//                         for(int l= 0; l < 3; ++l){
+//                             genFk = (int)J[el1][k];
+//                             genFl = (int)J[el2][l];
+//                             genFkSub = CppDic[genFk];
+//                             genFlSub = CppDic[genFl];
+//                             if (genFkSub>=0 && genFlSub >=0){
+//                                 place = genFkSub + Nsub*genFlSub;
+//                                 Asubloc[place] = Asubloc[place] + res[3*l + k];
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+// #pragma omp critical
+//             {
+//                 for (int i = 0; i<Nsub; ++i){
+//                     for (int j=0; j<Nsub; ++j){
+//                         Asub[i][j] = Asub[i][j] + Asubloc[i*Nsub + j];
+//                     }
+//
+//                 }
+//             }
+//
+//
+//
+//
+//             outputs[0] = Asub;
+//         }
+//     };
+// };

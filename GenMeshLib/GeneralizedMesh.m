@@ -52,7 +52,18 @@ classdef GeneralizedMesh < handle
         function nvt = nvtx(M)
             nvt = size(M.vtx,1);
         end
-        
+        function l = stp(M)
+            edg = M.subsimplices(1);
+            l    = M.vtx(edg(:,2),:) - M.vtx(edg(:,1),:);
+            l    = sqrt(sum(l.^2,2));
+            l    = [min(l) max(l) mean(l) std(l)];
+        end
+        function X = ctr(M)
+            X = zeros(size(M.elt,1),size(M.vtx,2));
+            for i = 1:size(M.elt,2)
+                X = X + (1/size(M.elt,2)) .* M.vtx(M.elt(:,i),:);
+            end
+        end
         function ndvol = ndv(M)
             ndvol = mshNdvolume(M);
         end
@@ -85,6 +96,20 @@ classdef GeneralizedMesh < handle
                 error('msh.m : unavailable case')
             end
         end
+        function Nu = nrmEdg(M)
+        if (size(M,2) == 3)
+            Nu = cell(1,3);
+            for i = 1:3
+                Nu{i} = cross(M.tgt{i},M.nrm,2);
+            end
+        elseif (size(M,2) == 2)
+            T     = M.tgt; 
+            Nu{1} = T;
+            Nu{2} = -T;
+        else
+            error('msh.m : unavailable case')
+        end
+    end
         function s = size(varargin)
             s = size(varargin{1}.elt);
             if (nargin == 2)

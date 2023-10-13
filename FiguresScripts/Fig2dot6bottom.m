@@ -1,7 +1,4 @@
-%% Condition numbers for the 2D algorithm (Fig. 2.6, bottom)
-% Getting all results with NrefineMax = 9 takes about 8 hours.
-% The assembing routine for the hypersingular is embarassingly non-optimized.
-
+%% Condition numbers for the 3D algorithm (Fig. 2.6, bottom)
 
 % run from the folder where the script is located
 clear all; %#ok
@@ -23,48 +20,50 @@ mexExec = true; % switch to true for mex execution
 %% Geometry
 
 V = [0 0 0; 1 0 0; cos(2*pi/3) sin(2*pi/3) 0; cos(4*pi/3) sin(4*pi/3) 0; 1+cos(pi/3) 0 sin(pi/3); 1+cos(pi/3) 0 -sin(pi/3)];
-E = [1 2 3; 1 3 4; 1 4 2;2 1 5;2 1 6;5 2 6];
+E = [1 2 3; 1 3 4; 1 4 2;2 1 5;1 2 6;2 5 6];
 m = msh(V,E);
 plot(m);
 axis equal;
 %% Main loop to compute condition numbers
 
 
-NrefineMin = 0;
-NrefineMax = 2;
-
-condNoPrec = NaN + zeros(NrefineMax,1);
-condPrec = NaN + zeros(NrefineMax);
+NrefineMin = 7;
+NrefineMax = 7;
+NprecMax = 4;
+condNoPrec = NaN + zeros(NrefineMax+1,1);
+condPrec = NaN + zeros(NrefineMax+1);
 
 for Nrefine = NrefineMin:NrefineMax % Assembling operator
-    disp(Nrefine)
+    disp('h = ')
+    disp(1/2^Nrefine)
     M0 = intrinsicInflation(m);
     if Nrefine> 0
         M = M0.refine(Nrefine);
     else
         M = M0;
     end
-    
-    
-    
+
+
+
     [Ph,Jh,Av,F,gamma,I] = jumpSpaceP1(M);
     if mexExec
-        Wh = bemAssembly(M); 
+        Wh = bemAssembly(M,0);
     else
         Wh = slowBemAssembly(M);
     end
-    
-    
+
+
     Whtilde = Ph'*Wh*Ph;
-    
-    
+
+
     condNoPrec(Nrefine+1) = cond(Whtilde);
-    
-    for Nprec = 0:Nrefine % Assembling Preconditioner
-        
-        disp(Nprec)
+    condPrec(Nrefine+1,Nrefine+1) = 1;
+    for Nprec = 0:min(Nrefine,NprecMax) % Assembling Preconditioner
+
+        disp('H = ')
+        disp(1/2^Nprec);
         % Splitting
-        
+
         if Nprec == 0
             Mcoarse = M0;
             [~,parentElt] = Mcoarse.refine(Nrefine);
@@ -80,57 +79,62 @@ for Nrefine = NrefineMin:NrefineMax % Assembling operator
         end
         [PH,JH] = jumpSpaceP1(Mcoarse);
         if mexExec
-            WH = bemAssembly(Mcoarse); 
+            WH = bemAssembly(Mcoarse,0);
         else
             WH = slowBemAssembly(Mcoarse);
         end
-        
-        
+
+
         S = coarseSpaceP1(Mcoarse,M,parentElt); % S : {phi_{i,j}^H} -> {phi_{i,j}^h}
         F = faceSpaceP1(Mcoarse,M,parentElt);
         W = wireBasketSpaceP1(Mcoarse,M,parentElt);
-        
-        
-        RS = Jh*S*PH; % {yij^H} -> {yij^h}
+
+
+        RS = Jh*S*PH; % {psiij^H} -> {psiij^h}
         RW = Jh*W;
-        
-        
+
+
         WS = PH'*WH*PH;
         Prec = RS*(WS\(RS'));
         for i = 1:length(F)
             RFi = Jh*F{i};
             R = Ph*RFi;
             if mexExec
-                WFi = bemSubAssembly(M,R,gamma); 
+                WFi = bemSubAssembly(M,R,gamma,0);
             else
                 WFi = R'*Wh*R;
             end
             Prec = Prec + RFi*(WFi\(RFi'));
         end
-        
-        %         WW = bemSubAssembly(M,Ph*RW,gamma);
+
+        %         WW = bemSubAssembly(M,Ph*RW,gamma,0);
         if mexExec
-            WW = bemSubAssembly(M,Ph*RW,gamma); 
+            WW = bemSubAssembly(M,Ph*RW,gamma,0);
         else
-            WW = RW'*Whtilde*RW;    
+            WW = RW'*Whtilde*RW;
         end
-        
+
         Prec = Prec + RW*(WW\(RW'));
-        
-        [~,D] = eig(Prec*Whtilde);
-        d = sort(real((diag(D))));
-        kappa = max(d)/min(d);
-        condPrec(Nrefine+1,Nprec+1) = kappa;
+%
+        if (k == 0)
+            [~,D] = eig(Prec*Whtilde);
+            d = sort(real((diag(D))));
+            kappa = max(d)/min(d);
+            condPrec(Nrefine+1,Nprec+1) = kappa;
+        else
+            condPrec(Nrefine+1,Nprec+1) = cond(Prec*Whtilde);%kappa;
+        end
+
     end
-    
+
 end
-% 
+%
 % save('condNoPrec','condNoPrec')
 % save('condPrec','condPrec');
 
 %%
 close all;
-% 
+%
 % load('condNoPrec','condNoPrec');
 % load('condPrec','condPrec');
 
@@ -144,9 +148,9 @@ hold on
 for j = 1:min(5,NrefineMax)
     loglog(level,condPrec(:,j),'-o','LineWidth',2);
 end
-loglog(level,0.7 + 0.7*log(1./h),'k--','LineWidth',2);
-loglog(level,0.7 + 0.7*log(1./h).^2,'k--','LineWidth',2);
-loglog(level,0.7*1./h,'k--','LineWidth',2);
+loglog(level,0.7 + 0.5*log(1./h),'k--','LineWidth',2);
+loglog(level,log(1./h).^2,'k--','LineWidth',2);
+loglog(level,1./h,'k--','LineWidth',2);
 
 annotation('textarrow',[0.77,0.7],[0.8 0.8],'String','No preconditioner','Interpreter','latex','Color',[0 0.4470 0.7410],'FontSize',20)
 annotation('textarrow',[0.77,0.7],[0.55 0.55],'String','$H = 1$ ','Interpreter','latex','Color',[0.8500 0.3250 0.0980],'FontSize',20)

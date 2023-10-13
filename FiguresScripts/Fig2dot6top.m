@@ -21,8 +21,8 @@ cd FiguresScripts
 
 %% Geometry
 
-V = [0 0 0; 1 0 0; -cos(pi/3),sin(pi/3),0; -cos(pi/3) -sin(pi/3) 0];
-E = [1 2; 1 3; 1 4];
+V = [0 0 0; 1 0 0; 2 0 0];%; -cos(pi/3),sin(pi/3),0; -cos(pi/3) -sin(pi/3) 0];
+E = [1 2; 2 3]; %1 3; 1 4];
 m = msh(V,E);
 plot(m);
 axis equal;
@@ -31,7 +31,7 @@ axis equal;
 
 
 NrefineMin = 0;
-NrefineMax = 4;
+NrefineMax = 8;
 
 condNoPrec = NaN + zeros(NrefineMax,1);
 condPrec = NaN + zeros(NrefineMax);

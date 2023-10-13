@@ -1,6 +1,6 @@
 function [A] = slowBemAssembly(M,waveNum)
 % Handles k > 0 for Hemholtz operator.
-if ~exist('k','var')||isempty(waveNum)
+if ~exist('waveNum','var')||isempty(waveNum)
     waveNum=0;
 end
 

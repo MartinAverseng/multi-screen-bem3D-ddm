@@ -1,5 +1,10 @@
 % element-wise assembly of hypersingular operator on a generalized mesh.
-function [A] = bemSubAssembly(M,R,gamma)
+function [A] = bemSubAssembly(M,R,gamma,k)
+
+if ~exist('k','var')||isempty(k)
+    k = 0;
+end
+
 % R restriction matrix.
 % 
 MatlabInd = 1; % Recall C++ is O-indexed and Matlab 1-indexed.
@@ -20,7 +25,13 @@ Ne = M.nelt;
 Nvtx = size(M.vtx,1);
 Melt = M.elt - MatlabInd;
 CppDic = dictionnary - MatlabInd;
-Asub = CppSubAssembly(Nsub,Nsubelt,Nf,Ne,Nvtx,J,M.vtx,Melt,Klist,CppDic);
+
+if k == 0
+    Asub = CppSubAssembly(Nsub,Nsubelt,Nf,Ne,Nvtx,J,M.vtx,Melt,Klist,CppDic);
+else
+    [AsubReal,AsubImag] = CppSubAssembly(Nsub,Nsubelt,Nf,Ne,Nvtx,J,M.vtx,Melt,Klist,CppDic,k);
+    Asub = AsubReal + 1i*AsubImag;
+end
 A = R'*(Isigma'*(Asub*(Isigma*R)));
 
 

@@ -54,21 +54,36 @@ R3 vprod(const R3& u, const R3& v){
 	    u[0]*v[1]-u[1]*v[0]);}
 
 
+//Disposition 1: no "secret repetitions" in num.
+// ex: vtx = [A B C], [D E A]
+// -> num = [1 2 3 4 5 1] (and NOT [1 2 3 4 5 6])
+
+//Disposition 2: no "secret repetitions" in num, AND
+// repeated vertices are head of list.
+// ex: vtx = [A B C], [D E A]
+// -> num = [1 2 3 1 4 5]
+
+
+
+
 double  SingInt(double* vtx, int* num){
 
+  // vtx,num assumed in disposition 1.
   int Iy[] = {num[0],num[1],num[2]};
   int Ix[] = {num[3],num[4],num[5]};
 
+  // Disposition 1 ->
   int r  = 0;
   for(int j=0; j<3; ++j){
     for(int k=0; k<3; ++k){
       if(Ix[j]==Iy[k]){
-	std::swap(Ix[j],Ix[r]);
-	std::swap(Iy[k],Iy[r]);
-	r++;
+        std::swap(Ix[j],Ix[r]);
+        std::swap(Iy[k],Iy[r]);
+        r++;
       }
     }
   }
+  // -> Disposition 2.
 
   R3 x[3], y[3];
   for(int j=0; j<3; ++j){
@@ -137,7 +152,7 @@ double  SingInt(double* vtx, int* num){
 //##############################################################//
 
 void HsOp(double* vtx, int* tri, double* res){
-
+  // (vtx,tri) assumed in disposition 1.
   int* Jx = tri+3;
   int* Jy = tri;
   R3 x[3], y[3];
@@ -147,6 +162,8 @@ void HsOp(double* vtx, int* tri, double* res){
       y[j][k]=vtx[3*Jy[j]+k];
     }
   }
+  //
+
 
   R3 Nx,Ny;
   Nx = vprod(x[1]-x[0],x[2]-x[1]);

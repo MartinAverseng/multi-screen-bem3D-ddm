@@ -72,7 +72,7 @@ end
 Nx = size(X,1);
 
 % Rangesearch with max(|edge|)_Y
-[Ielt,Relt] = rangesearch(X,ctr,1.1*stp(2));                  %%% DEBUG %%%
+[Ielt,Relt] = rangesearch(X,ctr,2*stp(2));                  %%% DEBUG %%%
 Mx          = cell(Nelt,1);
 
 
@@ -85,7 +85,7 @@ for el = 1:Nelt
     NUel = reshape(nu(el,:),3,2)';
     
     % Local size
-    rMin = 1.1*lgt(el);                                       %%% DEBUG %%%
+    rMin = 2*lgt(el);                                       %%% DEBUG %%%
     
     % Quadratures points in interaction
     Iy = elt2qud(el,:);

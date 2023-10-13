@@ -4,13 +4,13 @@ function [P,JumpOp,AvOp,F,gamma,I] = jumpSpaceP1(M)
 % J defined by
 % [phi_{(i,j)}]_Gamma = sum_{k} J_{k,(i,j)} [y_k]_Gamma
 
-% P is the matrix of the inclusion operator p : Y_h -> \V_h
-% J is the matrix of the projection j: \V_h -> Y_h
-% with respect to the direct sum \Vh = Y_h + V_h
+% P is the matrix of the inclusion operator p : Psi_h -> \V_h
+% J is the matrix of the projection j: \V_h -> Psi_h
+% with respect to the direct sum \Vh = Psi_h + V_h
 
 % One has the property j(p(y))  = y
 % i.e. JP = Id_{QxQ}
-% where Q is the dimension of the Y_h
+% where Q is the dimension of the Psi_h
 
 
 
@@ -75,13 +75,13 @@ vJ = zeros(nnzJ,1);
 
 
 k = 0; % number of lines of JumpOp filled
-l = 0; 
+l = 0;
 for v = 1:Nvtx
     gfs = memv{v};
     L = length(gfs);
     for i = 1:L
         iJ((l+1):(l+(L-1)),1) = gfs(i)*ones(L-1,1);
-        jJ((l+1):(l+(L-1)),1) = k+(1:L-1)';
+        jJ((l+1):(l+(L-1)),1) = k+(1:(L-1))';
         vJtmp = ones(L-1,1)*(-1/L);
         if (i<=L-1)
             vJtmp(i) = 1 - 1/L;

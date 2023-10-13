@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include "quadrule.hpp"
-#include "hypersingular.hpp"
+#include "hypersingular_helmholtz.hpp"
 #include "mex.hpp"
 #include "mexAdapter.hpp"
 #include <omp.h>
@@ -40,6 +40,7 @@ void ismember(const std::vector<int>& A,//T2
       const Array J = inputs[3];
       const Array MMvtx = inputs[4];
       const Array Melt = inputs[5];
+      double wavenum = inputs[6][0];
       std::vector<double> Mvtx(3*Nvtx);
       std::vector<int> Jint(3*Ne);
       std::vector<int> MeltInt(3*Ne);
@@ -55,17 +56,19 @@ void ismember(const std::vector<int>& A,//T2
         }
       }
 
-
-      std::vector<double> Aloc(Nf*Nf);
+      std::vector<double> Aloc_real(Nf*Nf);
+      std::vector<double> Aloc_imag(Nf*Nf);
       for (int i = 0; i< Nf*Nf; ++i){
-        Aloc[i] = 0;
+        Aloc_real[i] = 0;
+        Aloc_imag[i] = 0;
       }
       omp_set_num_threads(8);
       #pragma omp parallel
       {
         std::vector<int> num(6);
         std::vector<double> vtx(18);
-        std::vector<double> res(9);
+        std::vector<double> res_real(9);
+        std::vector<double> res_imag(9);
         std::vector<int> T1(3),T2(3),I(3);
         std::vector<bool> b(3);
         int genFl,genFk;
@@ -74,9 +77,9 @@ void ismember(const std::vector<int>& A,//T2
         num[0] = 0; num[1] = 1; num[2] = 2;
         #pragma omp for
         for(int el1=0; el1<Ne; ++el1){
-          index1 = 3*el1; 
+          index1 = 3*el1; // Will be reused below
           for(int p=0; p<3; ++p){
-            T1[p] = MeltInt[index1+p];
+            T1[p] = MeltInt[index1+p]; // Don't change index1 here
             for(int q=0; q<3; ++q){
               vtx[3*p+q] = Mvtx[3*T1[p]+q];
             }
@@ -107,7 +110,7 @@ void ismember(const std::vector<int>& A,//T2
             }
             // done
 
-            HsOp(vtx.data(),num.data(),res.data());
+            HelmholtzHsOp(vtx.data(),num.data(),res_real.data(),res_imag.data(),wavenum);
             index5=3*el2;
             index6 = index1;
             for (int k = 0; k < 3; ++k){
@@ -118,7 +121,9 @@ void ismember(const std::vector<int>& A,//T2
                 index5++;
                 index7=genFk+Nf*genFl;
                 # pragma omp atomic
-                Aloc[index7] += res[3*l + k];
+                Aloc_real[index7] += res_real[3*l + k];
+                # pragma omp atomic
+                Aloc_imag[index7] += res_imag[3*l + k];
               }
               index5-=3;//index5 = 3*el2+l
             }
@@ -126,6 +131,7 @@ void ismember(const std::vector<int>& A,//T2
         }
 
       }
-      outputs[0] = factory.createArray({Nf,Nf},Aloc.begin(),Aloc.end());
+      outputs[0] = factory.createArray({Nf,Nf},Aloc_real.begin(),Aloc_real.end());
+      outputs[1] = factory.createArray({Nf,Nf},Aloc_imag.begin(),Aloc_imag.end());
     }
   };

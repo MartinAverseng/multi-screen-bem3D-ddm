@@ -86,7 +86,6 @@ methods
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CLEAN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function mesh = clean(varargin)
-        warning('Cleaning')
         mesh = varargin{1};
         if (nargin==1)
             mesh = mshClean(mesh,[]);
