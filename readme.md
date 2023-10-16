@@ -1,5 +1,5 @@
 This Matlab/C++ code is a prototype for a 2D and 3D boundary element code to solve integral equations on non-manifold geometries.
-It has been used to obtain the numerical results from <link here>.
+It has been used to obtain the numerical results from https://arxiv.org/abs/2310.09204.
 
 To reproduce the figures of this paper, open Matlab in the folder FiguresScripts and run with appropriate parameters.
 Note that the 3D BEM assembling routine requires the use of a mex file which calls a parallel C++ code.
