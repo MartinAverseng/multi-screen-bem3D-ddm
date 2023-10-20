@@ -2,7 +2,7 @@
 
 
 <div>
-<img src="doc/junction.png" alt="Multi-screen Junction" width=500/>
+<img src="doc/junction.png" alt="Multi-screen Junction" width=500/><br>
 <img src="doc/Laplace2Dcross.png" alt="Laplace 2D BEM cross-point" width=250/>
 <img src="doc/Laplace3Dbowtie.png" alt="Laplace 3D BEM junction" width=250/>
 </div>
