@@ -1,6 +1,10 @@
 # Boundary Element Methods on non-manifold boundaries, and domain-decomposition preconditioner
 
 
+![](doc/junction.png)
+![](doc/Laplace2Dcross.png)
+![](doc/Laplace3Dbowtie.png)
+
 ## Contents
 
 This Matlab/C++ code is a prototype for a 2D and 3D boundary element code to solve integral equations on non-manifold boundaries.
