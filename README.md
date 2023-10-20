@@ -1,7 +1,8 @@
 # Boundary Element Methods on non-manifold boundaries, and domain-decomposition preconditioner
 
 
-##Contents
+## Contents
+
 This Matlab/C++ code is a prototype for a 2D and 3D boundary element code to solve integral equations on non-manifold boundaries.
 It has been used to obtain the numerical results from [this paper](https://arxiv.org/abs/2310.09204).
 
@@ -14,7 +15,8 @@ This is based on [this paper](https://www.sciencedirect.com/science/article/pii/
 It implements Duffy-type quadratures to treat the singular integrals in the boundary element method.
 
 
-##Reproducing the results
+## Reproducing the results
+
 To reproduce these results, open Matlab in the folder FiguresScripts and run with appropriate parameters.
 Note that the 3D BEM assembling routine requires the use of a mex file which calls a parallel C++ code.
 The compilation of the mex file may depend on your specific configuration. If necessary, the call to bemAssembly
