@@ -1,9 +1,11 @@
 # Boundary Element Methods on non-manifold boundaries, and domain-decomposition preconditioner
 
 
-![](doc/junction.png)
-![](doc/Laplace2Dcross.png)
-![](doc/Laplace3Dbowtie.png)
+<div>
+<img src="doc/junction.png" alt="Multi-screen Junction" width=500/>
+<img src="doc/Laplace2Dcross.png" alt="Laplace 2D BEM cross-point" width=500/>
+<img src="doc/Laplace3Dbowtie.png" alt="Laplace 3D BEM junction" width=500/>
+</div>
 
 ## Contents
 
